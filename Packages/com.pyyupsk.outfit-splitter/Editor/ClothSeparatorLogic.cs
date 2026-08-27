@@ -25,7 +25,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
         {
             var result = new SplitResult
             {
-                CreatedObjects = new List<GameObject>()
+                CreatedObjects = []
             };
 
             Undo.SetCurrentGroupName("Split Outfit");
@@ -74,7 +74,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
             {
                 if (materials[i] == null) continue;
 
-                var piece = CreatePiece(source, i, new[] { i }, preservePhysBones);
+                var piece = CreatePiece(source, i, [i], preservePhysBones);
                 if (piece != null) pieces.Add(piece);
             }
 
@@ -90,7 +90,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
             for (int i = 0; i < mesh.subMeshCount; i++)
             {
-                var piece = CreatePiece(source, i, new[] { i }, preservePhysBones);
+                var piece = CreatePiece(source, i, [i], preservePhysBones);
                 if (piece != null) pieces.Add(piece);
             }
 

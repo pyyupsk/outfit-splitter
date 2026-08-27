@@ -18,7 +18,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
         private bool _pruneBones = true;
         private bool _preservePhysBones = true;
         private Vector2 _scrollPosition;
-        private List<SkinnedMeshRenderer> _targetRenderers = new();
+        private List<SkinnedMeshRenderer> _targetRenderers = [];
         private string _statusMessage = "";
         private MessageType _statusType = MessageType.Info;
 
@@ -49,7 +49,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 var renderers = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
                 _targetRenderers.AddRange(renderers);
             }
-            _targetRenderers = _targetRenderers.Distinct().ToList();
+            _targetRenderers = [.. _targetRenderers.Distinct()];
         }
 
         private void OnGUI()
