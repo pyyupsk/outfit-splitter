@@ -1,0 +1,25 @@
+{
+  "name": "com.pyyupsk.outfit-splitter",
+  "displayName": "Outfit Splitter",
+  "version": "1.0.0",
+  "author": {
+    "name": "pyyupsk",
+    "email": "contact@fasu.dev"
+  },
+  "url": "https://github.com/pyyupsk/outfit-splitter/releases/download/v1.0.0/com.pyyupsk.outfit-splitter-1.0.0.zip",
+  "unity": "2022.3",
+  "description": "Split avatar outfits by mesh with PhysBone collider preservation for VRChat Avatars 3.0",
+  "keywords": [
+    "vrchat",
+    "avatar",
+    "outfit",
+    "cloth",
+    "physbone"
+  ],
+  "category": "Tools",
+  "vpmDependencies": {
+    "com.vrchat.avatars": "3.10.x"
+  },
+  "license": "MIT",
+  "licenseUrl": "https://raw.githubusercontent.com/pyyupsk/outfit-splitter/main/LICENSE"
+}

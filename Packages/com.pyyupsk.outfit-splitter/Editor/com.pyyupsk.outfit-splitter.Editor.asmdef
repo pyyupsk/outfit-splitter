@@ -1,0 +1,20 @@
+{
+  "name": "com.pyyupsk.outfit-splitter.Editor",
+  "references": [
+    "VRC.SDK3.Dynamics.PhysBone",
+    "VRC.SDK3.Avatars",
+    "VRC.Core"
+  ],
+  "defineConstraints": [
+    "VRC_SDK_VRCSDK3",
+    "VRC_SDK_AVATARS"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true
+}

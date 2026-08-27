@@ -1,5 +1,6 @@
 /*/
 com.vrchat.*/
 !com.vrchat.core.*/
+!com.pyyupsk.outfit-splitter/
 !vpm-manifest.json
 !manifest.json

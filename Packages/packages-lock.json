@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.pyyupsk.outfit-splitter": {
+      "version": "file:com.pyyupsk.outfit-splitter",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.burst": {
       "version": "1.8.12",
       "depth": 1,
