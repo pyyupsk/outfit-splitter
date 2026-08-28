@@ -25,7 +25,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
         [MenuItem(Version.MenuPath, false, 2000)]
         public static void ShowWindow()
         {
-            GetWindow<ClothSeparatorWindow>("Outfit Splitter");
+            GetWindow<ClothSeparatorWindow>($"Outfit Splitter v{Version.VersionString}");
         }
 
         private void OnEnable()
@@ -56,7 +56,6 @@ namespace Pyyupsk.OutfitSplitter.Editor
         {
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
 
-            DrawHeader();
             DrawSDKWarning();
             DrawTargetList();
             DrawOptions();
@@ -64,13 +63,6 @@ namespace Pyyupsk.OutfitSplitter.Editor
             DrawStatus();
 
             EditorGUILayout.EndScrollView();
-        }
-
-        private void DrawHeader()
-        {
-            EditorGUILayout.LabelField("Outfit Splitter", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"v{Version.VersionString}", EditorStyles.miniLabel);
-            EditorGUILayout.Space(10);
         }
 
         private void DrawTargetList()
