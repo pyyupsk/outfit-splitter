@@ -127,10 +127,10 @@ public struct SplitResult
                 return null;
             }
 
-            newSmr.sharedMesh = extracted.Mesh;
             newSmr.sharedMaterials = subMeshIndices.Select(i => source.sharedMaterials[i]).ToArray();
             newSmr.bones = extracted.Bones;
             newSmr.rootBone = extracted.RootBone;
+            newSmr.sharedMesh = extracted.Mesh;
             newSmr.quality = source.quality;
             newSmr.updateWhenOffscreen = source.updateWhenOffscreen;
             newSmr.skinnedMotionVectors = source.skinnedMotionVectors;
@@ -391,9 +391,46 @@ public struct SplitResult
                 };
             }
 
-            var newMesh = UnityEngine.Object.Instantiate(mesh);
+            // Create new bindposes matching the new bones array (copy from original mesh for kept bones)
+            var oldBindposes = mesh.bindposes;
+            var newBindposes = new Matrix4x4[newBones.Length];
+            var oldToNewBindposeIndex = new Dictionary<int, int>();
+            int newBindposeIdx = 0;
+            for (int i = 0; i < oldBones.Length; i++)
+            {
+                var bone = oldBones[i];
+                if (bone != null && (usedBones.Contains(bone) || bone == smr.rootBone))
+                {
+                    oldToNewBindposeIndex[i] = newBindposeIdx;
+                    if (i < oldBindposes.Length)
+                    {
+                        newBindposes[newBindposeIdx] = oldBindposes[i];
+                    }
+                    newBindposeIdx++;
+                }
+            }
+
+            // Create completely new mesh with correct bindposes (don't instantiate - bindposes would mismatch)
+            var newMesh = new Mesh();
+            Undo.RegisterCreatedObjectUndo(newMesh, "Create Pruned Mesh");
+            newMesh.name = mesh.name + "_Pruned";
+
+            newMesh.SetVertices(mesh.vertices);
+            if (mesh.normals.Length > 0) newMesh.SetNormals(mesh.normals);
+            if (mesh.tangents.Length > 0) newMesh.SetTangents(mesh.tangents);
+            if (mesh.uv.Length > 0) newMesh.SetUVs(0, mesh.uv);
+            if (mesh.uv2.Length > 0) newMesh.SetUVs(1, mesh.uv2);
+            if (mesh.uv3.Length > 0) newMesh.SetUVs(2, mesh.uv3);
+            if (mesh.uv4.Length > 0) newMesh.SetUVs(3, mesh.uv4);
+            if (mesh.colors.Length > 0) newMesh.SetColors(mesh.colors);
             newMesh.boneWeights = newBoneWeights;
-            newMesh.name = mesh.name;
+            newMesh.bindposes = newBindposes;
+            newMesh.subMeshCount = mesh.subMeshCount;
+            for (int s = 0; s < mesh.subMeshCount; s++)
+            {
+                newMesh.SetTriangles(mesh.GetTriangles(s), s);
+            }
+            newMesh.RecalculateBounds();
 
             Undo.RecordObject(smr, "Update Bones and Mesh");
             smr.bones = newBones;
