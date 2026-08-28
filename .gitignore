@@ -11,7 +11,10 @@
 /[Mm]emoryCaptures/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
-!/[Aa]ssets/**/*.meta
+# Ignore all Assets/ content (this is a package-only repo, Assets/ is for testing only)
+/[Aa]ssets/*
+!/[Aa]ssets/.gitkeep
+!/[Aa]ssets/.gitignore
 
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # /[Aa]ssets/AssetStoreTools*
