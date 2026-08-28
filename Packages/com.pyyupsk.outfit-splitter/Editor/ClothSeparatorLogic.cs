@@ -5,7 +5,14 @@ using UnityEngine;
 
 namespace Pyyupsk.OutfitSplitter.Editor
 {
-public struct ExtractedMeshData
+public struct SplitResult
+        {
+            public int CreatedPieces;
+            public int PrunedBones;
+            public List<GameObject> CreatedObjects;
+        }
+
+        public struct ExtractedMeshData
         {
             public Mesh Mesh;
             public Transform[] Bones;
@@ -172,7 +179,7 @@ public struct ExtractedMeshData
             if (triangles.Count == 0)
             {
                 Object.DestroyImmediate(newMesh);
-                return null;
+                return default;
             }
 
             var vertexMap = new Dictionary<int, int>();
