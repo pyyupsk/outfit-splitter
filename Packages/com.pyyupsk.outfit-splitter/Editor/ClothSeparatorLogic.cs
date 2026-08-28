@@ -66,25 +66,20 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
                 if (!partialMode)
                 {
-                    // Disable original renderers
-                    foreach (var smr in renderers)
+                    // Disable original avatar root object
+                    if (avatarRoot != null)
                     {
-                        if (smr != null)
-                        {
-                            Undo.RecordObject(smr, "Disable Original Renderer");
-                            smr.enabled = false;
-                        }
+                        Undo.RecordObject(avatarRoot.gameObject, "Disable Original Avatar");
+                        avatarRoot.gameObject.SetActive(false);
                     }
                 }
                 else
                 {
-                    foreach (var smr in renderers)
+                    // Disable original avatar root object
+                    if (avatarRoot != null)
                     {
-                        if (smr != null)
-                        {
-                            Undo.RecordObject(smr, "Disable Original Renderer");
-                            smr.enabled = false;
-                        }
+                        Undo.RecordObject(avatarRoot.gameObject, "Disable Original Avatar");
+                        avatarRoot.gameObject.SetActive(false);
                     }
                 }
             }
