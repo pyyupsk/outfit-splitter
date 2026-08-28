@@ -1,0 +1,80 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Setup Unity
+        uses: game-ci/unity-installer@v4
+        with:
+          unityVersion: 2022.3.22f1
+          cacheKey: unity-2022-3-22f1
+
+      - name: Setup Unity License
+        uses: game-ci/unity-installer@v4
+        with:
+          unityVersion: 2022.3.22f1
+          cacheKey: unity-2022-3-22f1
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Resolve VPM dependencies
+        run: |
+          cd /mnt/d/VRChatProjects/outfit-splitter
+          # VPM resolver will auto-restore packages when Unity opens
+
+      - name: Build .unitypackage
+        id: build_unitypackage
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: 2022.3.22f1
+          targetPlatform: StandaloneWindows64
+          buildMethod: VRC.PackageMaker.PackageMakerWindow.BuildUnityPackage
+          projectPath: .
+          customParameters: -packageName com.pyyupsk.outfit-splitter
+
+      - name: Build .zip package
+        id: build_zip
+        run: |
+          cd /mnt/d/VRChatProjects/outfit-splitter
+          PACKAGE_DIR="Packages/com.pyyupsk.outfit-splitter"
+          VERSION=$(cat "$PACKAGE_DIR/package.json" | grep '"version"' | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
+          ZIP_NAME="com.pyyupsk.outfit-splitter-${VERSION}.zip"
+          zip -r "$ZIP_NAME" "$PACKAGE_DIR" -x "*.meta" "*/.*" "*/bin/" "*/obj/"
+          echo "zip_path=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ steps.build_zip.outputs.zip_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload .unitypackage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unitypackage
+          path: build/*.unitypackage
+          retention-days: 30

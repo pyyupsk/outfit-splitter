@@ -1,0 +1,50 @@
+name: Build VPM Listing
+
+on:
+  release:
+    types: [published, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install VPM listing generator
+        run: |
+          npm install -g @vrchat-community/vpm-listing-generator
+
+      - name: Generate VPM listing
+        run: |
+          mkdir -p dist
+          vpm-listing-generator \
+            --owner pyyupsk \
+            --repo outfit-splitter \
+            --branch main \
+            --output dist/index.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          destination_dir: .
+          force_orphan: true
