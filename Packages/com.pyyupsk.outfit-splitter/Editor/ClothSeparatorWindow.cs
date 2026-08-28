@@ -122,7 +122,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
         private void DrawActionButtons()
         {
-            var canSplit = _targetRenderers.Count > 0;
+            var canSplit = _targetRenderers.Count > 1;
             using (new EditorGUI.DisabledScope(!canSplit))
             {
                 if (GUILayout.Button("Split Outfit", GUILayout.Height(36)))
@@ -131,9 +131,13 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 }
             }
 
-            if (!canSplit)
+            if (_targetRenderers.Count == 0)
             {
                 EditorGUILayout.HelpBox("Select at least one SkinnedMeshRenderer to enable splitting.", MessageType.Warning);
+            }
+            else if (_targetRenderers.Count == 1)
+            {
+                EditorGUILayout.HelpBox("Select multiple SkinnedMeshRenderers to split. Single renderer cannot be split.", MessageType.Info);
             }
 
             if (GUILayout.Button("Refresh Selection", GUILayout.Height(24)))
