@@ -5,14 +5,14 @@ using UnityEngine;
 
 namespace Pyyupsk.OutfitSplitter.Editor
 {
-    public struct SplitResult
-    {
-        public int CreatedPieces;
-        public int PrunedBones;
-        public List<GameObject> CreatedObjects;
-    }
+public struct ExtractedMeshData
+        {
+            public Mesh Mesh;
+            public Transform[] Bones;
+            public Transform RootBone;
+        }
 
-    public static class ClothSeparatorLogic
+        public static class ClothSeparatorLogic
     {
         public static SplitResult SplitOutfit(
             List<SkinnedMeshRenderer> targets,
@@ -113,17 +113,17 @@ namespace Pyyupsk.OutfitSplitter.Editor
             var newSmr = pieceGo.AddComponent<SkinnedMeshRenderer>();
             Undo.RecordObject(newSmr, "Configure New SMR");
 
-            var newMesh = ExtractSubMesh(source.sharedMesh, subMeshIndices);
-            if (newMesh == null)
+            var extracted = ExtractSubMesh(source.sharedMesh, subMeshIndices, source.bones, source.rootBone);
+            if (extracted.Mesh == null)
             {
                 Undo.DestroyObjectImmediate(pieceGo);
                 return null;
             }
 
-            newSmr.sharedMesh = newMesh;
+            newSmr.sharedMesh = extracted.Mesh;
             newSmr.sharedMaterials = subMeshIndices.Select(i => source.sharedMaterials[i]).ToArray();
-            newSmr.bones = source.bones;
-            newSmr.rootBone = source.rootBone;
+            newSmr.bones = extracted.Bones;
+            newSmr.rootBone = extracted.RootBone;
             newSmr.quality = source.quality;
             newSmr.updateWhenOffscreen = source.updateWhenOffscreen;
             newSmr.skinnedMotionVectors = source.skinnedMotionVectors;
@@ -143,9 +143,10 @@ namespace Pyyupsk.OutfitSplitter.Editor
             return pieceGo;
         }
 
-        private static Mesh ExtractSubMesh(Mesh sourceMesh, int[] subMeshIndices)
+        private static ExtractedMeshData ExtractSubMesh(Mesh sourceMesh, int[] subMeshIndices, Transform[] sourceBones, Transform sourceRootBone)
         {
-            if (sourceMesh == null) return null;
+            var result = new ExtractedMeshData();
+            if (sourceMesh == null) return result;
 
             var newMesh = new Mesh();
             Undo.RegisterCreatedObjectUndo(newMesh, "Create Extracted Mesh");
@@ -245,8 +246,42 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 newMesh.boneWeights[i] = bw;
             }
 
-            newMesh.RecalculateBounds();
-            return newMesh;
+            // Build the bones array that matches the new bindposes
+            var usedBoneIndices = usedBones.OrderBy(x => x).ToList();
+            var newBones = new Transform[usedBoneIndices.Count];
+            for (int i = 0; i < usedBoneIndices.Count; i++)
+            {
+                int oldBoneIndex = usedBoneIndices[i];
+                if (oldBoneIndex < sourceBones.Length && sourceBones[oldBoneIndex] != null)
+                {
+                    newBones[i] = sourceBones[oldBoneIndex];
+                }
+            }
+
+            // Find root bone in the new bones array
+            Transform newRootBone = null;
+            if (sourceRootBone != null)
+            {
+                // Try to find the root bone in the new bones array
+                for (int i = 0; i < newBones.Length; i++)
+                {
+                    if (newBones[i] == sourceRootBone)
+                    {
+                        newRootBone = newBones[i];
+                        break;
+                    }
+                }
+                // If not found, use the first bone or null
+                if (newRootBone == null && newBones.Length > 0)
+                {
+                    newRootBone = newBones[0];
+                }
+            }
+
+            result.Mesh = newMesh;
+            result.Bones = newBones;
+            result.RootBone = newRootBone;
+            return result;
         }
 
         private static void CopyPhysBoneSetup(GameObject source, GameObject target, int[] subMeshIndices)
@@ -282,8 +317,11 @@ namespace Pyyupsk.OutfitSplitter.Editor
             var smr = pieceRoot.GetComponent<SkinnedMeshRenderer>();
             if (smr == null || smr.bones == null || smr.rootBone == null) return 0;
 
+            var mesh = smr.sharedMesh;
+            if (mesh == null) return 0;
+
             var usedBones = new HashSet<Transform>();
-            foreach (var bw in smr.sharedMesh.boneWeights)
+            foreach (var bw in mesh.boneWeights)
             {
                 if (bw.boneIndex0 >= 0 && bw.boneIndex0 < smr.bones.Length)
                     usedBones.Add(smr.bones[bw.boneIndex0]);
@@ -298,8 +336,12 @@ namespace Pyyupsk.OutfitSplitter.Editor
             var allBones = smr.bones.Where(b => b != null).ToList();
             var pruned = 0;
 
+            // Sort by hierarchy depth (deepest first) to avoid destroying parents before children
+            allBones.Sort((a, b) => GetHierarchyDepth(b).CompareTo(GetHierarchyDepth(a)));
+
             foreach (var bone in allBones)
             {
+                if (bone == null) continue;
                 if (!usedBones.Contains(bone) && bone != smr.rootBone)
                 {
                     Undo.DestroyObjectImmediate(bone.gameObject);
@@ -307,11 +349,61 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 }
             }
 
-            var newBones = allBones.Where(b => b != null && (usedBones.Contains(b) || b == smr.rootBone)).ToArray();
-            Undo.RecordObject(smr, "Update Bones Array");
+            // Rebuild bone array and remap bone weights
+            var oldBones = smr.bones;
+            var newBonesList = new List<Transform>();
+            var oldToNewIndex = new Dictionary<int, int>();
+
+            for (int i = 0; i < oldBones.Length; i++)
+            {
+                var bone = oldBones[i];
+                if (bone != null && (usedBones.Contains(bone) || bone == smr.rootBone))
+                {
+                    oldToNewIndex[i] = newBonesList.Count;
+                    newBonesList.Add(bone);
+                }
+            }
+
+            var newBones = newBonesList.ToArray();
+
+            // Remap bone weights to new indices
+            var newBoneWeights = new BoneWeight[mesh.boneWeights.Length];
+            for (int i = 0; i < mesh.boneWeights.Length; i++)
+            {
+                var bw = mesh.boneWeights[i];
+                newBoneWeights[i] = new BoneWeight
+                {
+                    boneIndex0 = bw.boneIndex0 >= 0 && oldToNewIndex.TryGetValue(bw.boneIndex0, out var ni0) ? ni0 : -1,
+                    weight0 = bw.weight0,
+                    boneIndex1 = bw.boneIndex1 >= 0 && oldToNewIndex.TryGetValue(bw.boneIndex1, out var ni1) ? ni1 : -1,
+                    weight1 = bw.weight1,
+                    boneIndex2 = bw.boneIndex2 >= 0 && oldToNewIndex.TryGetValue(bw.boneIndex2, out var ni2) ? ni2 : -1,
+                    weight2 = bw.weight2,
+                    boneIndex3 = bw.boneIndex3 >= 0 && oldToNewIndex.TryGetValue(bw.boneIndex3, out var ni3) ? ni3 : -1,
+                    weight3 = bw.weight3,
+                };
+            }
+
+            var newMesh = UnityEngine.Object.Instantiate(mesh);
+            newMesh.boneWeights = newBoneWeights;
+            newMesh.name = mesh.name;
+
+            Undo.RecordObject(smr, "Update Bones and Mesh");
             smr.bones = newBones;
+            smr.sharedMesh = newMesh;
 
             return pruned;
+        }
+
+        private static int GetHierarchyDepth(Transform t)
+        {
+            int depth = 0;
+            while (t.parent != null)
+            {
+                t = t.parent;
+                depth++;
+            }
+            return depth;
         }
     }
 }
