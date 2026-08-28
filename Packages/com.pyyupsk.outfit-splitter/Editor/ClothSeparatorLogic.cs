@@ -66,10 +66,27 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
                 if (!partialMode)
                 {
+                    // Create a disabled backup of the original avatar
                     foreach (var smr in renderers)
                     {
                         if (smr != null)
-                            Undo.DestroyObjectImmediate(smr.gameObject);
+                        {
+                            var avatarRoot = GetAvatarRoot(smr.transform);
+                            var originalBackup = UnityEngine.Object.Instantiate(avatarRoot.gameObject, avatarRoot.parent);
+                            originalBackup.name = avatarRoot.name + "_Original";
+                            originalBackup.SetActive(false);
+                            Undo.RegisterCreatedObjectUndo(originalBackup, "Create Original Backup");
+                            break; // Only need one backup per avatar
+                        }
+                    }
+                    // Disable original renderers
+                    foreach (var smr in renderers)
+                    {
+                        if (smr != null)
+                        {
+                            Undo.RecordObject(smr, "Disable Original Renderer");
+                            smr.enabled = false;
+                        }
                     }
                 }
                 else
