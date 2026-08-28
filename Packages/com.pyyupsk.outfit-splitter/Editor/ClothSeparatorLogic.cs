@@ -71,9 +71,9 @@ namespace Pyyupsk.OutfitSplitter.Editor
                     {
                         if (smr != null)
                         {
-                            var avatarRoot = GetAvatarRoot(smr.transform);
-                            var originalBackup = UnityEngine.Object.Instantiate(avatarRoot.gameObject, avatarRoot.parent);
-                            originalBackup.name = avatarRoot.name + "_Original";
+                            var root = GetAvatarRoot(smr.transform);
+                            var originalBackup = UnityEngine.Object.Instantiate(root.gameObject, root.parent);
+                            originalBackup.name = root.name + "_Original";
                             originalBackup.SetActive(false);
                             Undo.RegisterCreatedObjectUndo(originalBackup, "Create Original Backup");
                             break; // Only need one backup per avatar
