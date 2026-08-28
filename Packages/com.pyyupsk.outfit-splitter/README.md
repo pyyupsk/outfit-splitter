@@ -14,12 +14,22 @@ Split VRChat avatar outfits by mesh with PhysBone collider preservation.
 ## Installation
 
 ### Via VPM (Recommended)
+
+**Option A: GitHub Releases only (no listing repo needed)**
 1. Open VRChat Creator Companion
 2. Settings → Packages → Add Repository
-3. Add: `https://pyyupsk.github.io/outfit-splitter/index.json`
+3. Add: `https://github.com/pyyupsk/outfit-splitter/releases`
 4. Search "Outfit Splitter" and install
 
-> **Note**: Enable GitHub Pages on this repo (Settings → Pages → Source: GitHub Actions) for the VPM listing to work at `https://pyyupsk.github.io/outfit-splitter/index.json`
+**Option B: Dedicated VPM Listing Repository (recommended for multiple packages)**
+1. Create a new repo from [template-package-listing](https://github.com/vrchat-community/template-package-listing/generate)
+2. Name it `outfit-splitter-listing` (or similar)
+3. Edit `source.json` and add your package repo to `githubRepos`:
+   ```json
+   "githubRepos": ["pyyupsk/outfit-splitter"]
+   ```
+4. Enable GitHub Pages on the listing repo (Settings → Pages → Source: GitHub Actions)
+5. In VCC, add: `https://pyyupsk.github.io/outfit-splitter-listing/index.json`
 
 ### Manual
 Download latest `.unitypackage` from [Releases](https://github.com/pyyupsk/outfit-splitter/releases) and import.
@@ -43,6 +53,13 @@ Download latest `.unitypackage` from [Releases](https://github.com/pyyupsk/outfi
 
 - Unity 2022.3+
 - VRChat SDK3 Avatars 3.10+ (optional, for PhysBone features)
+
+## GitHub Actions
+
+This repository includes:
+- **`.github/workflows/release.yml`** - Builds `.zip` + `.unitypackage` on manual trigger (Actions tab → Build Release). Creates a GitHub Release with the package version as tag.
+
+For VPM listing with multiple packages, create a separate **listing repository** from [template-package-listing](https://github.com/vrchat-community/template-package-listing/generate) and use `.github/workflows/build-listing.yml` there.
 
 ## License
 

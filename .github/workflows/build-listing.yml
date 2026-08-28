@@ -1,50 +1,65 @@
 name: Build VPM Listing
 
+# This workflow should be in a SEPARATE listing repository (template-package-listing)
+# Not in the package repository itself.
+# See: https://vcc.docs.vrchat.com/guides/create-listing
+
 on:
-  release:
-    types: [published, edited, deleted]
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [source.json]
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  listPublishDirectory: Website
+  pathToCi: ci
+
 jobs:
   build-listing:
+    name: build-listing
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-          ref: main
+          repository: vrchat-community/package-list-action
+          path: ${{ env.pathToCi }}
+          clean: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Restore Cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version: '20'
-          cache: 'npm'
+          path: |
+            ${{ env.pathToCi }}/.nuke/temp
+            ~/.nuget/packages
+          key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj') }}
 
-      - name: Install VPM listing generator
-        run: |
-          npm install -g @vrchat-community/vpm-listing-generator
+      - name: Build Package Version Listing
+        run: ${{ env.pathToCi }}/build.cmd BuildMultiPackageListing --root ${{ env.pathToCi }} --list-publish-directory $GITHUB_WORKSPACE/${{ env.listPublishDirectory }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate VPM listing
-        run: |
-          mkdir -p dist
-          vpm-listing-generator \
-            --owner pyyupsk \
-            --repo outfit-splitter \
-            --branch main \
-            --output dist/index.json
+      - name: Setup Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ env.listPublishDirectory }}
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
-        if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist
-          destination_dir: .
-          force_orphan: true
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
