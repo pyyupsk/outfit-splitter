@@ -49,14 +49,14 @@ namespace Pyyupsk.OutfitSplitter.Editor
         public static Component[] GetPhysBones(GameObject go)
         {
             ResolveTypes();
-            if (_vrcPhysBoneType == null) return Array.Empty<Component>();
+            if (_vrcPhysBoneType == null) return new Component[0];
             return go.GetComponentsInChildren(_vrcPhysBoneType, true);
         }
 
         public static Component[] GetPhysBoneColliders(GameObject go)
         {
             ResolveTypes();
-            if (_vrcPhysBoneColliderType == null) return Array.Empty<Component>();
+            if (_vrcPhysBoneColliderType == null) return new Component[0];
             return go.GetComponentsInChildren(_vrcPhysBoneColliderType, true);
         }
 
