@@ -5,10 +5,7 @@
     "VRC.SDK3.Avatars",
     "VRC.Core"
   ],
-  "defineConstraints": [
-    "VRC_SDK_VRCSDK3",
-    "VRC_SDK_AVATARS"
-  ],
+  "defineConstraints": [],
   "includePlatforms": [
     "Editor"
   ],

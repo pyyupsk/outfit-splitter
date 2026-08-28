@@ -7,7 +7,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
 {
     public class ClothSeparatorWindow : EditorWindow
     {
-        private enum SeparationMode
+        public enum SeparationMode
         {
             ByMaterial,
             BySubMesh
@@ -18,7 +18,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
         private bool _pruneBones = true;
         private bool _preservePhysBones = true;
         private Vector2 _scrollPosition;
-        private List<SkinnedMeshRenderer> _targetRenderers = [];
+        private List<SkinnedMeshRenderer> _targetRenderers = new List<SkinnedMeshRenderer>();
         private string _statusMessage = "";
         private MessageType _statusType = MessageType.Info;
 
@@ -49,7 +49,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 var renderers = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
                 _targetRenderers.AddRange(renderers);
             }
-            _targetRenderers = [.. _targetRenderers.Distinct()];
+            _targetRenderers = _targetRenderers.Distinct().ToList();
         }
 
         private void OnGUI()
@@ -57,6 +57,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
 
             DrawHeader();
+            DrawSDKWarning();
             DrawTargetList();
             DrawOptions();
             DrawActionButtons();
@@ -148,6 +149,19 @@ namespace Pyyupsk.OutfitSplitter.Editor
                 EditorGUILayout.Space(10);
                 EditorGUILayout.HelpBox(_statusMessage, _statusType);
             }
+        }
+
+        private void DrawSDKWarning()
+        {
+            if (!VRChatSDKHelper.HasVRChatSDK)
+            {
+                EditorGUILayout.HelpBox(
+                    "VRChat SDK not detected. PhysBone preservation will be disabled.\n" +
+                    "Install VRChat SDK3 Avatars via VCC for full functionality.",
+                    MessageType.Warning);
+                _preservePhysBones = false;
+            }
+            EditorGUILayout.Space(5);
         }
 
         private void SplitOutfit()

@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using VRC.SDK3.Avatars.Components;
-using VRC.SDK3.Dynamics.PhysBone.Components;
 
 namespace Pyyupsk.OutfitSplitter.Editor
 {
@@ -25,7 +23,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
         {
             var result = new SplitResult
             {
-                CreatedObjects = []
+                CreatedObjects = new List<GameObject>()
             };
 
             Undo.SetCurrentGroupName("Split Outfit");
@@ -74,7 +72,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
             {
                 if (materials[i] == null) continue;
 
-                var piece = CreatePiece(source, i, [i], preservePhysBones);
+                var piece = CreatePiece(source, i, new[] { i }, preservePhysBones);
                 if (piece != null) pieces.Add(piece);
             }
 
@@ -90,7 +88,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
             for (int i = 0; i < mesh.subMeshCount; i++)
             {
-                var piece = CreatePiece(source, i, [i], preservePhysBones);
+                var piece = CreatePiece(source, i, new[] { i }, preservePhysBones);
                 if (piece != null) pieces.Add(piece);
             }
 
@@ -137,7 +135,7 @@ namespace Pyyupsk.OutfitSplitter.Editor
             newSmr.reflectionProbeUsage = source.reflectionProbeUsage;
             newSmr.probeAnchor = source.probeAnchor;
 
-            if (preservePhysBones)
+            if (preservePhysBones && VRChatSDKHelper.HasVRChatSDK)
             {
                 CopyPhysBoneSetup(sourceGo, pieceGo, subMeshIndices);
             }
@@ -253,46 +251,29 @@ namespace Pyyupsk.OutfitSplitter.Editor
 
         private static void CopyPhysBoneSetup(GameObject source, GameObject target, int[] subMeshIndices)
         {
-            var sourcePhysBones = source.GetComponentsInChildren<VRCPhysBone>(true);
-            var sourceColliders = source.GetComponentsInChildren<VRCPhysBoneCollider>(true);
+            var sourcePhysBones = VRChatSDKHelper.GetPhysBones(source);
+            var sourceColliders = VRChatSDKHelper.GetPhysBoneColliders(source);
 
             foreach (var srcPb in sourcePhysBones)
             {
                 if (srcPb == null) continue;
 
-                var targetPb = Undo.AddComponent<VRCPhysBone>(target);
-                Undo.RecordObject(targetPb, "Copy PhysBone Settings");
+                var targetPb = VRChatSDKHelper.AddPhysBone(target);
+                if (targetPb == null) continue;
 
-                targetPb.enabled = srcPb.enabled;
-                targetPb.rootTransform = srcPb.rootTransform;
-                targetPb.endpointPosition = srcPb.endpointPosition;
-                targetPb.pull = srcPb.pull;
-                targetPb.spring = srcPb.spring;
-                targetPb.stiffness = srcPb.stiffness;
-                targetPb.gravity = srcPb.gravity;
-                targetPb.gravityFalloff = srcPb.gravityFalloff;
-                targetPb.immobile = srcPb.immobile;
-                targetPb.integrateVelocity = srcPb.integrateVelocity;
-                targetPb.allowTranslation = srcPb.allowTranslation;
-                targetPb.allowRotation = srcPb.allowRotation;
-                targetPb.maxStretch = srcPb.maxStretch;
-                targetPb.collisionRadius = srcPb.collisionRadius;
-                targetPb.colliders = srcPb.colliders?.Select(c => c).ToArray() ?? System.Array.Empty<VRCPhysBoneCollider>();
-                targetPb.ignoreColliders = srcPb.ignoreColliders?.Select(c => c).ToArray() ?? System.Array.Empty<Collider>();
-                targetPb.stationaryColliders = srcPb.stationaryColliders?.Select(c => c).ToArray() ?? System.Array.Empty<Collider>();
+                Undo.RecordObject(targetPb, "Copy PhysBone Settings");
+                VRChatSDKHelper.CopyPhysBoneProperties(srcPb, targetPb);
             }
 
             foreach (var srcCol in sourceColliders)
             {
                 if (srcCol == null) continue;
 
-                var targetCol = Undo.AddComponent<VRCPhysBoneCollider>(target);
-                Undo.RecordObject(targetCol, "Copy PhysBoneCollider Settings");
+                var targetCol = VRChatSDKHelper.AddPhysBoneCollider(target);
+                if (targetCol == null) continue;
 
-                targetCol.enabled = srcCol.enabled;
-                targetCol.radius = srcCol.radius;
-                targetCol.shapeType = srcCol.shapeType;
-                targetCol.height = srcCol.height;
+                Undo.RecordObject(targetCol, "Copy PhysBoneCollider Settings");
+                VRChatSDKHelper.CopyPhysBoneColliderProperties(srcCol, targetCol);
             }
         }
 
