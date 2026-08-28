@@ -19,6 +19,8 @@ Split VRChat avatar outfits by mesh with PhysBone collider preservation.
 3. Add: `https://pyyupsk.github.io/outfit-splitter/index.json`
 4. Search "Outfit Splitter" and install
 
+> **Note**: Enable GitHub Pages on this repo (Settings → Pages → Source: GitHub Actions) for the VPM listing to work at `https://pyyupsk.github.io/outfit-splitter/index.json`
+
 ### Manual
 Download latest `.unitypackage` from [Releases](https://github.com/pyyupsk/outfit-splitter/releases) and import.
 
